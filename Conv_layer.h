@@ -123,7 +123,7 @@ void binary_write_conv(FILE* f, Conv* layer) {
     binary_write_kernels(f, layer->filter);
     fwrite(layer->stride, sizeof(int), 2, f);
     fwrite(layer->padding, sizeof(int), 2, f);
-    fwrite(layer->drop, sizeof(float), (int) layer->drop[0], f);
+    fwrite(layer->drop, sizeof(float), (int) layer->drop[0] + 1, f);
 }
 void binary_read_conv(FILE* f, Conv* layer) {
     fread(&(layer->activation), sizeof(int), 1, f);
