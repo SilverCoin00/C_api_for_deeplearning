@@ -1,5 +1,5 @@
 #pragma once
-#include "D:\Data\code_doc\Keras\Keras_core.h"
+#include "Keras_core.h"
 
 const int Layer_Input_Dim[] = {0, 1, 3, 3, 3, 3};
 const int Layer_Output_Dim[] = {0, 1, 1, 3, 3, 3};
