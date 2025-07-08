@@ -1,4 +1,4 @@
-#include "D:\Data\code_doc\Keras\Keras_core.h"
+#include "Keras_core.h"
 
 int main() {
     char file[] = "D:\\Data\\archive1\\flag.csv";
