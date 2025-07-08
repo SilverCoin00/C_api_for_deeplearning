@@ -1,7 +1,7 @@
 #include "Keras_core.h"
 
 int main() {
-    char file[] = "D:\\Data\\archive1\\flag.csv";
+    char file[] = "flag.csv";
     Data_Frame* df = read_csv(file, 1000, ",");
     Dataset* ds = trans_dframe_to_dset(2, df, NULL, "t");
     free_data_frame(df);
