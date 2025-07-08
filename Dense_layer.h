@@ -1,5 +1,5 @@
 #pragma once
-#include "D:\Data\code_doc\Keras\Keras_core.h"
+#include "Keras_core.h"
 
 static void free_dense_activated_data(Dense* layer) {
     if (layer->a) free_matrix(layer->a);
