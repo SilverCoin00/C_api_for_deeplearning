@@ -109,7 +109,7 @@ void binary_write_max_pool(FILE* f, MaxPooling* layer) {
     fwrite(&(layer->col), sizeof(int), 1, f);
     fwrite(layer->stride, sizeof(int), 2, f);
     fwrite(layer->padding, sizeof(int), 2, f);
-    fwrite(layer->drop, sizeof(float), (int) layer->drop[0], f);
+    fwrite(layer->drop, sizeof(float), (int) layer->drop[0] + 1, f);
 }
 void binary_read_max_pool(FILE* f, MaxPooling* layer) {
     fread(&(layer->row), sizeof(int), 1, f);
@@ -223,7 +223,7 @@ void binary_write_average_pool(FILE* f, AveragePooling* layer) {
     fwrite(&(layer->col), sizeof(int), 1, f);
     fwrite(layer->stride, sizeof(int), 2, f);
     fwrite(layer->padding, sizeof(int), 2, f);
-    fwrite(layer->drop, sizeof(float), (int) layer->drop[0], f);
+    fwrite(layer->drop, sizeof(float), (int) layer->drop[0] + 1, f);
 }
 void binary_read_average_pool(FILE* f, AveragePooling* layer) {
     fread(&(layer->row), sizeof(int), 1, f);
