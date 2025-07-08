@@ -1,5 +1,5 @@
 #pragma once
-#include "D:\Data\code_doc\Keras\Keras_core.h"
+#include "Keras_core.h"
 
 static void free_conv_activated_data(Conv* layer, int batch) {
     int i;
