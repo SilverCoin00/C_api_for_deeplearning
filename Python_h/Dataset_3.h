@@ -1,5 +1,5 @@
 #pragma once
-#include "D:\Std_gcc_&_g++_plus\Python.h"
+#include "Python.h"
 
 typedef struct Dataset_3 {
     Tensor** x;
