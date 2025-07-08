@@ -1,5 +1,5 @@
 #pragma once
-#include "D:\Data\code_doc\Keras\Keras_core.h"
+#include "Keras_core.h"
 
 void free_max_pooling_data(MaxPooling* layer, int batch) {
     int i;
