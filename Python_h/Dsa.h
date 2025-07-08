@@ -1,5 +1,5 @@
 #pragma once
-#include "D:\Std_gcc_&_g++_plus\Python.h"
+#include "Python.h"
 #define Nan (0.0f/0.0f)
 
 typedef struct Node {
