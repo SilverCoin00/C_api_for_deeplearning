@@ -6,7 +6,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
-#include "D:\Std_gcc_&_g++_plus\Python.h"
+#include "Python.h"
 
 typedef struct Input {
     int* shape;
