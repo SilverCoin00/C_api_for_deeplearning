@@ -1,5 +1,5 @@
 #pragma once
-#include "D:\Data\code_doc\Keras\Keras_core.h"
+#include "Keras_core.h"
 
 Kernel* init_kernels(int row, int col, int out_channel, int in_channel, int random_state) {
     Kernel* newk = (Kernel*)malloc(sizeof(Kernel));
