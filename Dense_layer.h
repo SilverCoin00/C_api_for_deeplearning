@@ -85,7 +85,7 @@ void binary_write_dense(FILE* f, Dense* layer) {
     fwrite(&(layer->weights->w->row), sizeof(int), 1, f);
     fwrite(&(layer->weights->w->col), sizeof(int), 1, f);
     binary_write_weights(f, layer->weights);
-    fwrite(layer->drop, sizeof(float), (int) layer->drop[0], f);
+    fwrite(layer->drop, sizeof(float), (int) layer->drop[0] + 1, f);
 }
 void binary_read_dense(FILE* f, Dense* layer) {
     fread(&(layer->activation), sizeof(int), 1, f);
