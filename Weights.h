@@ -1,5 +1,5 @@
 #pragma once
-#include "D:\Data\code_doc\Keras\Keras_core.h"
+#include "Keras_core.h"
 
 Weights* init_weights(int row, int col, int random_state) {
     Weights* neww = (Weights*)malloc(sizeof(Weights));
