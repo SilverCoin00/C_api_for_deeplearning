@@ -1,6 +1,6 @@
 #pragma once
 #include <omp.h>
-#include "D:\Std_gcc_&_g++_plus\Python.h"
+#include "Python.h"
 
 #ifdef OMP_ACCELERATOR
 __attribute__((constructor))
