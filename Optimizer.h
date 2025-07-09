@@ -159,6 +159,7 @@ void restore_best_weights(Sequential* model) {
         }
     }
     fclose(f);
+    remove("Do_not_touch_while_training.txt");
 }
 int early_stopping_check(Early_Stopping* es, float monitor_val, int cur_epoch, int* best_epoch, Sequential* model) {
     static int stop_threshold = 0;
