@@ -140,25 +140,6 @@ Early_Stopping* new_earlystopping(char* monitor, float min_delta, int patience, 
     new_es->restore_best_weights = !!restore_best_weights;
     return new_es;
 }
-int early_stopping_check(Early_Stopping* es, float monitor_val) {
-    if (es->monitor % 2 == 0) {
-        if (monitor_val > es->last_monitor_val - es->min_delta) return 0;  // not improve
-        else {
-            if (monitor_val < es->best_monitor_val) {
-                es->best_monitor_val = monitor_val;
-                return 2;
-            } else return 1;
-        }
-    } else {
-        if (monitor_val < es->last_monitor_val + es->min_delta) return 0;
-        else {
-            if (monitor_val > es->best_monitor_val) {
-                es->best_monitor_val = monitor_val;
-                return 2;
-            } else return 1;
-        }
-    }
-}
 void store_best_weights(Sequential* model) {
     FILE* f = fopen("Do_not_touch_while_training.txt", "wb");
     for (int i = 0; i < model->num_layers; i++) {
@@ -178,6 +159,36 @@ void restore_best_weights(Sequential* model) {
         }
     }
     fclose(f);
+}
+int early_stopping_check(Early_Stopping* es, float monitor_val, int cur_epoch, int* best_epoch, Sequential* model) {
+    static int stop_threshold = 0;
+    if (es->monitor % 2 == 0) {
+        if (monitor_val > es->last_monitor_val - es->min_delta) stop_threshold++;  // not improve
+        else {
+            stop_threshold = 0;
+            if (monitor_val < es->best_monitor_val) {
+                es->best_monitor_val = monitor_val;
+                *best_epoch = cur_epoch;
+                if (es->restore_best_weights) store_best_weights(model);
+            }
+        }
+    } else {
+        if (monitor_val < es->last_monitor_val + es->min_delta) stop_threshold++;
+        else {
+            stop_threshold = 0;
+            if (monitor_val > es->best_monitor_val) {
+                es->best_monitor_val = monitor_val;
+                *best_epoch = cur_epoch;
+                if (es->restore_best_weights) store_best_weights(model);
+            }
+        }
+    }
+    if (stop_threshold >= es->patience) {
+        printf("\nEpoch %d: early stopping\n", cur_epoch);
+        return 1;
+    }
+    es->last_monitor_val = monitor_val;
+    return 0;
 }
 void model_compile(Sequential* model, Optimizer* optimize, char* loss, char* metrics) {
     model->compiler = (Model_Compiler*)malloc(sizeof(Model_Compiler));
