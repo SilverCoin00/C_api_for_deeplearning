@@ -235,7 +235,6 @@ void model_fit(Sequential* model, Dataset* data, Dataset* val, int epochs, int b
     if (call_backs && estop->restore_best_weights) {
         printf("Restoring model weights from the end of the best epoch: %d\n", best_epoch);
         restore_best_weights(model);
-        remove("Do_not_touch_while_training.txt");
     }
     free(random_i);
     if (validation_split == -999) {
