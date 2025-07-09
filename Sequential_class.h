@@ -187,14 +187,11 @@ void model_fit(Sequential* model, Dataset* data, Dataset* val, int epochs, int b
     }
 
     Early_Stopping* estop = NULL;
-    int stop_threshold = 0, best_epoch;
+    int best_epoch = 0;
     float* monitor = NULL;
     if (call_backs) {
         estop = (Early_Stopping*) call_backs;
         monitor = loss_metrics + estop->monitor;
-        if (estop->restore_best_weights) {
-            best_epoch = 0;
-        }
     }
 
     int samples = get_ds_num_samples(train);
@@ -204,9 +201,9 @@ void model_fit(Sequential* model, Dataset* data, Dataset* val, int epochs, int b
     shuffle_index(random_i, samples, time(NULL));
 
     clock_t start, end;
-    for (i = 1, times = 2; i <= epochs; i++) {
+    for (i = 1, times = 2; i <= epochs; i++, times++) {
         start = clock();
-        for (j = 0; j < 2; j++) loss_metrics[j] = 0;
+        loss_metrics[0] = loss_metrics[1] = 0;
         shuffle_index(random_i, samples, i);
         for (j = 0; j < samples; j += batch_size) {
             model->batch_size = samples - j < batch_size ? samples - j : batch_size;
@@ -219,7 +216,6 @@ void model_fit(Sequential* model, Dataset* data, Dataset* val, int epochs, int b
             free_model_output(model, y_pred);
             free_dataset(batch);
         }
-        times++;
         end = clock();
 
         j = (int) ceil((float) samples / batch_size), loss_metrics[0] /= j, loss_metrics[1] /= j;
@@ -232,22 +228,8 @@ void model_fit(Sequential* model, Dataset* data, Dataset* val, int epochs, int b
             printf(" - val_loss: %.4f - val_%s: %.4f", loss_metrics[2], Metrics[model->compiler->metrics_type], loss_metrics[3]);
             free_model_output(model, y_pred);
         }
-        if (call_backs) {
-            j = early_stopping_check(estop, *monitor);
-            if(!j) stop_threshold++;
-            else {
-                stop_threshold = 0;
-                if (j == 2 && estop->restore_best_weights) {
-                    store_best_weights(model);
-                    best_epoch = i;
-                }
-            }
-            if (stop_threshold >= estop->patience) {
-                printf("\nEpoch %d: early stopping\n", i);
-                break;
-            }
-            estop->last_monitor_val = *monitor;
-        }
+        if (call_backs) 
+            if (early_stopping_check(estop, *monitor, i, &best_epoch, model)) break;
         printf("\n");
     }
     if (call_backs && estop->restore_best_weights) {
@@ -289,6 +271,7 @@ void model_save(const char* file_name, Sequential* model) {
         }
     }
     fclose(f);
+    printf("Model saved to file %s !\n", file_name);
 }
 Sequential* load_model(const char* file_name) {
     FILE* f = fopen(file_name, "rb");
@@ -311,6 +294,7 @@ Sequential* load_model(const char* file_name) {
     for (int i = 0; i < model->num_layers; i++) {
         model->layer[i] = (Keras_layer*)malloc(sizeof(Keras_layer));
         fread(&(model->layer[i]->type), sizeof(int), 1, f);
+        printf("%d ", model->layer[i]->type);
         switch (model->layer[i]->type) {
             case 1: model->layer[i]->layer = (Dense*)calloc(1, sizeof(Dense));
                     binary_read_dense(f, (Dense*) model->layer[i]->layer); break;
@@ -324,5 +308,6 @@ Sequential* load_model(const char* file_name) {
         }
     }
     fclose(f);
+    printf("Model loaded from file %s !\n", file_name);
     return model;
 }
