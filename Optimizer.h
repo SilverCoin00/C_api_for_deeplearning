@@ -1,5 +1,5 @@
 #pragma once
-#include "D:\Data\code_doc\Keras\Keras_core.h"
+#include "Keras_core.h"
 
 const char* Monitors[] = {"loss", "accuracy", "val_loss", "val_accuracy"};
 const char* Metrics[] = {"accuracy", "mse", "mae", "binary_accuracy", "categorical_accuracy"};
