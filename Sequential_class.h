@@ -12,9 +12,9 @@ void free_sequential(Sequential* model) {
         switch (model->layer[i]->type) {
             case 1: free_dense_layer((Dense*) (model->layer[i]->layer)); break;
             case 2: free_flatten_layer((Flatten*) (model->layer[i]->layer)); break;
-            case 3: free_conv_layer((Conv*) (model->layer[i]->layer), model->batch_size); break;
-            case 4: free_max_pooling_layer((MaxPooling*) (model->layer[i]->layer), model->batch_size); break;
-            case 5: free_average_pooling_layer((AveragePooling*) (model->layer[i]->layer), model->batch_size); break;
+            case 3: free_conv_layer((Conv*) (model->layer[i]->layer)); break;
+            case 4: free_max_pooling_layer((MaxPooling*) (model->layer[i]->layer)); break;
+            case 5: free_average_pooling_layer((AveragePooling*) (model->layer[i]->layer)); break;
         }
         free(model->layer[i]);
     }
@@ -147,13 +147,13 @@ void sequential_backprop(Sequential* model, void* input, void* output) {
             case 2: flatten_backprop((Flatten*) model->layer[i]->layer, &y1, &y3);
                     break;
             case 3: x3 = (Tensor**) get_activated_data(model, i - 1);
-                    conv_backprop(x3 ? x3 : (Tensor**) input, (Conv*) model->layer[i]->layer, model->batch_size, !(i - j), &y3, model->compiler);
+                    conv_backprop(x3 ? x3 : (Tensor**) input, (Conv*) model->layer[i]->layer, !(i - j), &y3, model->compiler);
                     break;
             case 4: x3 = (Tensor**) get_activated_data(model, i - 1);
-                    max_pool_backprop(x3 ? x3 : (Tensor**) input, (MaxPooling*) model->layer[i]->layer, model->batch_size, &y3);
+                    max_pool_backprop(x3 ? x3 : (Tensor**) input, (MaxPooling*) model->layer[i]->layer, &y3);
                     break;
             case 5: x3 = (Tensor**) get_activated_data(model, i - 1);
-                    average_pool_backprop(x3 ? x3 : (Tensor**) input, (AveragePooling*) model->layer[i]->layer, model->batch_size, &y3);
+                    average_pool_backprop(x3 ? x3 : (Tensor**) input, (AveragePooling*) model->layer[i]->layer, &y3);
                     break;
         }
     }
@@ -278,8 +278,9 @@ Sequential* load_model(const char* file_name) {
         printf("Error: Cannot open file %s !!", file_name);
         return NULL;
     }
-    char* s = (char*)malloc(1000* sizeof(char));
+    char* s = (char*)malloc(50* sizeof(char));
     fread(s, sizeof(char), 32, f);
+    s[32] = '\0';
     if (strcmp(s, MODEL_KEY)) {
         printf("Warning: No permission to read this file !!");
         free(s);
@@ -293,7 +294,6 @@ Sequential* load_model(const char* file_name) {
     for (int i = 0; i < model->num_layers; i++) {
         model->layer[i] = (Keras_layer*)malloc(sizeof(Keras_layer));
         fread(&(model->layer[i]->type), sizeof(int), 1, f);
-        printf("%d ", model->layer[i]->type);
         switch (model->layer[i]->type) {
             case 1: model->layer[i]->layer = (Dense*)calloc(1, sizeof(Dense));
                     binary_read_dense(f, (Dense*) model->layer[i]->layer); break;
