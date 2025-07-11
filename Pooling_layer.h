@@ -1,26 +1,26 @@
 #pragma once
 #include "Keras_core.h"
 
-void free_max_pooling_data(MaxPooling* layer, int batch) {
+void free_max_pooling_data(MaxPooling* layer) {
     int i;
     if (layer->pool) {
-        for (i = 0; i < batch; i++) if (layer->pool[i]) free_tensor(layer->pool[i]);
+        for (i = 0; i < layer->batch; i++) if (layer->pool[i]) free_tensor(layer->pool[i]);
         free(layer->pool);
         layer->pool = NULL;
     }
     if (layer->mask_row) {
-        for (i = 0; i < batch; i++) if (layer->mask_row[i]) free_tensor(layer->mask_row[i]);
+        for (i = 0; i < layer->batch; i++) if (layer->mask_row[i]) free_tensor(layer->mask_row[i]);
         free(layer->mask_row);
         layer->mask_row = NULL;
     }
     if (layer->mask_col) {
-        for (i = 0; i < batch; i++) if (layer->mask_col[i]) free_tensor(layer->mask_col[i]);
+        for (i = 0; i < layer->batch; i++) if (layer->mask_col[i]) free_tensor(layer->mask_col[i]);
         free(layer->mask_col);
         layer->mask_col = NULL;
     }
 }
-void free_max_pooling_layer(MaxPooling* layer, int batch) {
-    free_max_pooling_data(layer, batch);
+void free_max_pooling_layer(MaxPooling* layer) {
+    free_max_pooling_data(layer);
     if (layer->drop) free(layer->drop);
     if (layer->stride) free(layer->stride);
     if (layer->padding)free(layer->padding);
@@ -63,7 +63,8 @@ static void max_pool_func(Matrix* x, Matrix* pool, int pool_h, int pool_w,
     }
 }
 void max_pool_forward(Tensor** x, MaxPooling* layer, int batch, int is_training, Tensor*** y) {
-    free_max_pooling_data(layer, batch);
+    free_max_pooling_data(layer);
+    layer->batch = batch;
     layer->pool = (Tensor**)malloc(batch* sizeof(Tensor*));
     layer->mask_row = (Tensor**)malloc(batch* sizeof(Tensor*));
     layer->mask_col = (Tensor**)malloc(batch* sizeof(Tensor*));
@@ -87,10 +88,10 @@ void max_pool_forward(Tensor** x, MaxPooling* layer, int batch, int is_training,
     }
     *y = layer->pool;
 }
-void max_pool_backprop(Tensor** front_a, MaxPooling* layer, int batch, Tensor*** dL_da) {
-    Tensor** back_delta = (Tensor**)malloc(batch* sizeof(Tensor*));
+void max_pool_backprop(Tensor** front_a, MaxPooling* layer, Tensor*** dL_da) {
+    Tensor** back_delta = (Tensor**)malloc(layer->batch* sizeof(Tensor*));
     int i, j, k, h, max_r, max_c;
-    for (i = 0; i < batch; i++) {
+    for (i = 0; i < layer->batch; i++) {
         back_delta[i] = new_tensor(front_a[i]->mat[0]->row, front_a[i]->mat[0]->col, front_a[i]->depth);
         for (j = 0; j < layer->pool[i]->depth; j++) 
             for (k = 0; k < layer->pool[i]->mat[j]->row; k++) 
@@ -125,16 +126,16 @@ void binary_read_max_pool(FILE* f, MaxPooling* layer) {
     fread(layer->drop + 1, sizeof(float), (int) drop, f);
 }
 
-void free_average_pooling_data(AveragePooling* layer, int batch) {
+void free_average_pooling_data(AveragePooling* layer) {
     int i;
     if (layer->pool) {
-        for (i = 0; i < batch; i++) if (layer->pool[i]) free_tensor(layer->pool[i]);
+        for (i = 0; i < layer->batch; i++) if (layer->pool[i]) free_tensor(layer->pool[i]);
         free(layer->pool);
         layer->pool = NULL;
     }
 }
-void free_average_pooling_layer(AveragePooling* layer, int batch) {
-    free_average_pooling_data(layer, batch);
+void free_average_pooling_layer(AveragePooling* layer) {
+    free_average_pooling_data(layer);
     if (layer->drop) free(layer->drop);
     if (layer->stride) free(layer->stride);
     if (layer->padding)free(layer->padding);
@@ -172,7 +173,8 @@ static void average_pool_func(Matrix* x, Matrix* pool, int pool_h, int pool_w, i
     }
 }
 void average_pool_forward(Tensor** x, AveragePooling* layer, int batch, int is_training, Tensor*** y) {
-    free_average_pooling_data(layer, batch);
+    free_average_pooling_data(layer);
+    layer->batch = batch;
     layer->pool = (Tensor**)malloc(batch* sizeof(Tensor*));
     int i, j;
     int row = (x[0]->mat[0]->row - layer->row + 2* layer->padding[0]) / layer->stride[0] + 1, 
@@ -206,10 +208,10 @@ static void average_repool_func(Matrix* x, Matrix* pool, int pool_h, int pool_w,
             average_repool_point(x, pool->val[i][j], pool_h, pool_w, start_row + ci, start_col + cj);
     }
 }
-void average_pool_backprop(Tensor** front_a, AveragePooling* layer, int batch, Tensor*** dL_da) {
-    Tensor** back_delta = (Tensor**)malloc(batch* sizeof(Tensor*));
+void average_pool_backprop(Tensor** front_a, AveragePooling* layer, Tensor*** dL_da) {
+    Tensor** back_delta = (Tensor**)malloc(layer->batch* sizeof(Tensor*));
     int i, j;
-    for (i = 0; i < batch; i++) {
+    for (i = 0; i < layer->batch; i++) {
         back_delta[i] = new_tensor(front_a[i]->mat[0]->row, front_a[i]->mat[0]->col, front_a[i]->depth);
         for (j = 0; j < layer->pool[i]->depth; j++) 
             average_repool_func(back_delta[i]->mat[j], (*dL_da)[i]->mat[j], layer->row, layer->col, layer->stride, layer->padding);
