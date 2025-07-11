@@ -89,6 +89,7 @@ typedef struct Conv {
     float* drop;
     Kernel* pre_velo;
     Kernel* acc_grad;
+    int batch;
 } Conv;
 typedef struct MaxPooling {
     int row, col;         // pool_sizes
@@ -98,6 +99,7 @@ typedef struct MaxPooling {
     Tensor** mask_row;    // max_position_row
     Tensor** mask_col;    // max_position_col
     float* drop;
+    int batch;
 } MaxPooling;
 typedef struct AveragePooling {
     int row, col;
@@ -105,6 +107,7 @@ typedef struct AveragePooling {
     int* padding;
     Tensor** pool;
     float* drop;
+    int batch;
 } AveragePooling;
 
 typedef struct {
