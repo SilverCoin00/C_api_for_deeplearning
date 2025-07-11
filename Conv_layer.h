@@ -1,22 +1,22 @@
 #pragma once
 #include "Keras_core.h"
 
-static void free_conv_activated_data(Conv* layer, int batch) {
+static void free_conv_activated_data(Conv* layer) {
     int i;
     if (layer->a) {
-        for (i = 0; i < batch; i++) if (layer->a[i]) free_tensor(layer->a[i]);
+        for (i = 0; i < layer->batch; i++) if (layer->a[i]) free_tensor(layer->a[i]);
         free(layer->a);
     }
     if (layer->z) {
-        for (i = 0; i < batch; i++) if (layer->z[i]) free_tensor(layer->z[i]);
+        for (i = 0; i < layer->batch; i++) if (layer->z[i]) free_tensor(layer->z[i]);
         free(layer->z);
     }
 }
-void free_conv_layer(Conv* layer, int batch) {
+void free_conv_layer(Conv* layer) {
     free_kernels(layer->filter);
     free_kernels(layer->deriv);
     free_kernels(layer->pre_velo);
-    free_conv_activated_data(layer, batch);
+    free_conv_activated_data(layer);
     if (layer->stride) free(layer->stride);
     if (layer->padding)free(layer->padding);
     if (layer->drop) free(layer->drop);
@@ -52,7 +52,8 @@ void drop_conv_neural(Tensor** a, int batch, int* drop_i, int* cur_num_units, fl
 }
 void conv_forward(Conv* layer, Tensor** x, int batch, int is_training, Tensor*** y) {
     int i;
-    free_conv_activated_data(layer, batch);
+    free_conv_activated_data(layer);
+    layer->batch = batch;
     layer->z = (Tensor**)malloc(batch* sizeof(Tensor*));
     for (i = 0; i < batch; i++) layer->z[i] = kernel_func(layer->filter, x[i], layer->stride, layer->padding);
     layer->a = (Tensor**)malloc(batch* sizeof(Tensor*));
@@ -81,36 +82,36 @@ static Tensor** cal_conv_delta_a(Tensor** dL_dz, Kernel* filter, int batch, int*
     free(padding_b);
     return dL_da;
 }
-void conv_backprop(Tensor** front_a, Conv* layer, int batch, int is_last, Tensor*** dL_da, Model_Compiler* cpl) {
+void conv_backprop(Tensor** front_a, Conv* layer, int is_last, Tensor*** dL_da, Model_Compiler* cpl) {
     int i, j;
     if (!layer->deriv) layer->deriv = init_kernels(layer->filter->w[0]->mat[0]->row, layer->filter->w[0]->mat[0]->col, 
                                                     layer->filter->channel, layer->filter->w[0]->depth, 0);
-    Tensor** a_deriv = (Tensor**)malloc(batch* sizeof(Tensor*));
-    Tensor** dL_dz = (Tensor**)malloc(batch* sizeof(Tensor*));
-    for (i = 0; i < batch; i++) a_deriv[i] = activation_derivative_2D(layer->a[i], layer->z[i], layer->activation);
+    Tensor** a_deriv = (Tensor**)malloc(layer->batch* sizeof(Tensor*));
+    Tensor** dL_dz = (Tensor**)malloc(layer->batch* sizeof(Tensor*));
+    for (i = 0; i < layer->batch; i++) a_deriv[i] = activation_derivative_2D(layer->a[i], layer->z[i], layer->activation);
     Kernel* temp = get_copy_kernels(layer->filter);
     check_nestorov_2D(temp, layer->pre_velo, cpl->optimize);
 
-    if (!is_last) for (i = 0; i < batch; i++) dL_dz[i] = tensor_ewise_multiply((*dL_da)[i], a_deriv[i]);
+    if (!is_last) for (i = 0; i < layer->batch; i++) dL_dz[i] = tensor_ewise_multiply((*dL_da)[i], a_deriv[i]);
     else {
-        for (i = 0; i < batch; i++) {
+        for (i = 0; i < layer->batch; i++) {
             dL_dz[i] = minust(layer->a[i], (*dL_da)[i]);
-            tensor_scalar_multiply(dL_dz[i], 1.0f / batch);
+            tensor_scalar_multiply(dL_dz[i], 1.0f / layer->batch);
             if (cpl->loss_type == 1 && layer->activation != 0) 
                 get_tensor_ewise_multiply(dL_dz[i], a_deriv[i]);
         }
     }
 
-    for (i = 0; i < batch; i++) {
+    for (i = 0; i < layer->batch; i++) {
         free_tensor((*dL_da)[i]);
         free_tensor(a_deriv[i]);
     }
     free(a_deriv);
     free(*dL_da);
-    kernel_derivative(layer->deriv, front_a, batch, dL_dz, layer->stride, layer->padding);
+    kernel_derivative(layer->deriv, front_a, layer->batch, dL_dz, layer->stride, layer->padding);
 
-    *dL_da = cal_conv_delta_a(dL_dz, layer->filter, batch, layer->stride, layer->padding);
-    for (i = 0; i < batch; i++) free_tensor(dL_dz[i]);
+    *dL_da = cal_conv_delta_a(dL_dz, layer->filter, layer->batch, layer->stride, layer->padding);
+    for (i = 0; i < layer->batch; i++) free_tensor(dL_dz[i]);
     free(dL_dz);
     free_kernels(temp);
 }
@@ -132,7 +133,7 @@ void binary_read_conv(FILE* f, Conv* layer) {
     fread(&depth, sizeof(int), 1, f);
     fread(&row, sizeof(int), 1, f);
     fread(&col, sizeof(int), 1, f);
-    layer->filter = init_kernels(row, col, layer->out_channels, depth, row + col + depth);
+    layer->filter = init_kernels(row, col, layer->out_channels, depth, 0);
     binary_read_kernels(f, layer->filter);
     layer->stride = (int*)malloc(2* sizeof(int));
     layer->padding = (int*)malloc(2* sizeof(int));
